@@ -159,6 +159,8 @@
   .toggle input[type="checkbox"] { width: 22px; height: 22px; flex: none; accent-color: var(--accent); }
   .src-name { font-size: 13px; color: var(--muted); line-height: 1.6; word-break: break-all; margin-top: 8px; }
   .hint { margin-top: 12px; font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+  #shareLink { font-size: 12px; }
+  .warn { color: #B3261E; }
 
   footer { text-align: center; margin-top: 18px; font-size: 12px; color: var(--muted); line-height: 1.8; }
 </style>
@@ -344,6 +346,22 @@
       </div>
     </div>
 
+    <div class="sec">
+      <h3>专属链接</h3>
+      <p class="sec-note">把当前这张卡的样子生成一个专属链接，别人打开链接就能看到同一张卡。</p>
+      <div class="file-row">
+        <button class="mini-btn" type="button" id="shareGen">生成专属链接</button>
+      </div>
+      <div id="shareBox" hidden>
+        <input id="shareLink" type="text" readonly style="margin-top:10px">
+        <div class="file-row" style="margin-top:10px">
+          <button class="mini-btn" type="button" id="shareCopy">复制链接</button>
+          <span class="src-name" id="shareMsg" style="margin-top:0"></span>
+        </div>
+        <p class="src-name warn" id="shareWarn" hidden>专属链接里不含你刚上传的照片/音乐，它们只在当前页面有效</p>
+      </div>
+    </div>
+
     <p class="hint">这是一张样品卡：上传的照片和音乐只在当前浏览器里有效，关掉页面就没了，不会保存下来；正式售卖时按你的要求做好。默认音乐是内置合成的生日旋律，无版权问题；自己上传的音乐请确认有使用权。</p>
   </section>
 
@@ -385,7 +403,13 @@
 
   /* ---------- segmented button helper ---------- */
   function bindSeg(attr, onSelect) {
-    var btns = document.querySelectorAll("[data-" + attr + "]");
+    // NB: [data-theme] also matches <body data-theme="...">, so only
+    // <button> elements count as segmented controls. Without this, a
+    // click anywhere on the page bubbles up to <body> and re-applies
+    // the peach theme, wiping any custom colours.
+    var all = document.querySelectorAll("[data-" + attr + "]");
+    var btns = [];
+    each(all, function (b) { if (b.tagName === "BUTTON") { btns.push(b); } });
     each(btns, function (b) {
       b.addEventListener("click", function () {
         each(btns, function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
@@ -502,7 +526,9 @@
     $("colorAccent").value = t.accent;
     $("colorInk").value = t.ink;
   }
+  var customColors = false;
   function applyCustomColors() {
+    customColors = true;
     var page = $("colorPage").value, accent = $("colorAccent").value, ink = $("colorInk").value;
     var st = document.body.style;
     st.setProperty("--page", page);
@@ -520,6 +546,7 @@
     if (!t) { return; }
     document.body.setAttribute("data-theme", key);
     clearCustomColorProps();
+    customColors = false;
     syncColorInputs(t);
   });
   each(["colorPage", "colorAccent", "colorInk"], function (id) {
@@ -527,6 +554,7 @@
   });
   $("colorReset").addEventListener("click", function () {
     clearCustomColorProps();
+    customColors = false;
     var key = document.body.getAttribute("data-theme") || "peach";
     syncColorInputs(THEMES[key]);
     themeSeg.set(key);
@@ -763,9 +791,10 @@
       deco: { confetti: true, hearts: true, cake: false, fireworks: true }, anim: "fall"
     }
   };
-  var occasionSeg = bindSeg("occasion", function (key) {
+  function applyOccasion(key) {
     var o = OCCASIONS[key];
     if (!o) { return; }
+    occasionSeg.set(key);
     stopMusic();
     setText("titleIn", "titleOut", o.title, "生日快乐");
     setText("kickerIn", "kickerOut", o.kicker, "HAPPY BIRTHDAY");
@@ -775,6 +804,7 @@
     var t = THEMES[o.theme];
     document.body.setAttribute("data-theme", o.theme);
     clearCustomColorProps();
+    customColors = false;
     syncColorInputs(t);
     themeSeg.set(o.theme);
     currentIllus = o.illus;
@@ -787,6 +817,158 @@
     $("decoFireworks").checked = o.deco.fireworks;
     $("animStyle").value = o.anim;
     applyDeco();
+  }
+  var occasionSeg = bindSeg("occasion", applyOccasion);
+
+  /* ---------- share link (#c=) ---------- */
+  // Shared state shape (all fields optional on decode; bad values are ignored):
+  // { occasion, illustration, theme, colors?: {bg, accent, text},
+  //   title, subtitle, name, blessing, signature,
+  //   photo: "default"|"hidden", music: "synth"|"none",
+  //   deco: {confetti, hearts, cake, fireworks}, animStyle: "fall"|"rise" }
+  // Uploaded photos / music can never travel inside a link, so they are
+  // deliberately left out (photo falls back to the default picture,
+  // uploaded music falls back to the built-in synth melody).
+  function b64urlEncode(str) {
+    var b = btoa(unescape(encodeURIComponent(str)));
+    return b.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function b64urlDecode(s) {
+    s = s.replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) { s += "="; }
+    return decodeURIComponent(escape(atob(s)));
+  }
+  function currentOccasion() {
+    var b = document.querySelector('[data-occasion][aria-pressed="true"]');
+    return b ? b.getAttribute("data-occasion") : "birthday";
+  }
+  function collectState() {
+    var st = {
+      occasion: currentOccasion(),
+      illustration: currentIllus,
+      theme: document.body.getAttribute("data-theme") || "peach",
+      title: $("titleIn").value,
+      subtitle: $("kickerIn").value,
+      name: $("nameIn").value,
+      blessing: $("blessingIn").value,
+      signature: $("fromIn").value,
+      photo: photoVisible ? "default" : "hidden",
+      music: musicSource === "upload" ? "synth" : musicSource,
+      deco: {
+        confetti: $("decoConfetti").checked,
+        hearts: $("decoHearts").checked,
+        cake: $("decoCake").checked,
+        fireworks: $("decoFireworks").checked
+      },
+      animStyle: $("animStyle").value
+    };
+    if (customColors) {
+      st.colors = { bg: $("colorPage").value, accent: $("colorAccent").value, text: $("colorInk").value };
+    }
+    return st;
+  }
+  function isHexColor(v) {
+    return typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v);
+  }
+  function applySharedState(s) {
+    if (!s || typeof s !== "object" || Array.isArray(s)) { return; }
+    var occ = (typeof s.occasion === "string" && OCCASIONS[s.occasion]) ? s.occasion : "birthday";
+    applyOccasion(occ);
+    if (typeof s.title === "string") { setText("titleIn", "titleOut", s.title, "生日快乐"); }
+    if (typeof s.subtitle === "string") { setText("kickerIn", "kickerOut", s.subtitle, "HAPPY BIRTHDAY"); }
+    if (typeof s.name === "string") { setText("nameIn", "nameOut", s.name, "你"); }
+    if (typeof s.blessing === "string") { setText("blessingIn", "blessingOut", s.blessing, "生日快乐！"); }
+    if (typeof s.signature === "string") { setText("fromIn", "fromOut", s.signature, "——"); }
+    if (typeof s.theme === "string" && THEMES[s.theme]) {
+      var t = THEMES[s.theme];
+      document.body.setAttribute("data-theme", s.theme);
+      clearCustomColorProps();
+      customColors = false;
+      syncColorInputs(t);
+      themeSeg.set(s.theme);
+    }
+    if (s.colors && typeof s.colors === "object" && isHexColor(s.colors.bg) && isHexColor(s.colors.accent) && isHexColor(s.colors.text)) {
+      $("colorPage").value = s.colors.bg;
+      $("colorAccent").value = s.colors.accent;
+      $("colorInk").value = s.colors.text;
+      applyCustomColors();
+    }
+    if (typeof s.illustration === "string" && (s.illustration === "photo" || s.illustration === "flowers" || s.illustration === "bear" || s.illustration === "leaves" || s.illustration === "none")) {
+      currentIllus = s.illustration;
+      illusSeg.set(s.illustration);
+    }
+    if (s.photo === "hidden") { photoVisible = false; $("photoShow").checked = false; }
+    else if (s.photo === "default") { photoVisible = true; $("photoShow").checked = true; }
+    applyIllus();
+    if (s.music === "synth" || s.music === "none") { setMusicSource(s.music); }
+    else if (s.music === "upload") { setMusicSource("synth"); }
+    if (s.deco && typeof s.deco === "object") {
+      if (typeof s.deco.confetti === "boolean") { $("decoConfetti").checked = s.deco.confetti; }
+      if (typeof s.deco.hearts === "boolean") { $("decoHearts").checked = s.deco.hearts; }
+      if (typeof s.deco.cake === "boolean") { $("decoCake").checked = s.deco.cake; }
+      if (typeof s.deco.fireworks === "boolean") { $("decoFireworks").checked = s.deco.fireworks; }
+    }
+    if (s.animStyle === "fall" || s.animStyle === "rise") { $("animStyle").value = s.animStyle; }
+    applyDeco();
+  }
+  function parseSharedHash() {
+    try {
+      var h = location.hash || "";
+      if (h.indexOf("#c=") !== 0) { return null; }
+      var raw = h.slice(3);
+      if (!raw) { return null; }
+      var s = JSON.parse(b64urlDecode(raw));
+      if (!s || typeof s !== "object" || Array.isArray(s)) { return null; }
+      return s;
+    } catch (e) { return null; }
+  }
+  function buildShareLink() {
+    return location.origin + location.pathname + "#c=" + b64urlEncode(JSON.stringify(collectState()));
+  }
+  function copyText(text, ok, fail) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok, function () { fallbackCopy(text, ok, fail); });
+    } else {
+      fallbackCopy(text, ok, fail);
+    }
+  }
+  function fallbackCopy(text, ok, fail) {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "0";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      var done = document.execCommand("copy");
+      document.body.removeChild(ta);
+      if (done) { ok(); } else { fail(); }
+    } catch (e) { fail(); }
+  }
+  function markShareStale(e) {
+    if ($("shareBox").hidden) { return; }
+    var id = (e.target && e.target.id) || "";
+    if (id === "shareLink" || id === "shareCopy" || id === "shareGen" || id === "shareMsg") { return; }
+    $("shareMsg").textContent = "卡片改过了，点“生成专属链接”重新生成。";
+  }
+  document.querySelector(".editor").addEventListener("input", markShareStale);
+  document.querySelector(".editor").addEventListener("change", markShareStale);
+  $("shareGen").addEventListener("click", function () {
+    $("shareLink").value = buildShareLink();
+    $("shareBox").hidden = false;
+    $("shareMsg").textContent = "链接已生成，复制后发给收卡人就能打开同一张卡。";
+    var hasUpload = (photoURL !== null) || (musicSource === "upload" && musicURL !== null);
+    $("shareWarn").hidden = !hasUpload;
+  });
+  $("shareLink").addEventListener("click", function () { this.select(); });
+  $("shareCopy").addEventListener("click", function () {
+    var link = $("shareLink").value;
+    if (!link) { return; }
+    copyText(link,
+      function () { $("shareMsg").textContent = "已复制，去发给收卡人吧。"; },
+      function () { $("shareMsg").textContent = "自动复制没成功，长按链接手动复制。"; });
   });
 
   /* ---------- init ---------- */
@@ -794,6 +976,8 @@
   applyDeco();
   updateMusicLabel();
   updateMusicSourceName();
+  var shared = parseSharedHash();
+  if (shared) { applySharedState(shared); }
 })();
 </script>
 </body>
