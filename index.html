@@ -163,6 +163,35 @@
   .warn { color: #B3261E; }
 
   footer { text-align: center; margin-top: 18px; font-size: 12px; color: var(--muted); line-height: 1.8; }
+  /* ---------- v4: steps / voice / sticky CTA / recipient ---------- */
+  .page { padding-bottom: 110px; }
+  .steps { display: flex; gap: 4px; align-items: center; overflow-x: auto; padding: 2px 2px 12px; scrollbar-width: none; }
+  .steps::-webkit-scrollbar { display: none; }
+  .step { flex: none; display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--muted); background: #fff; border: 1px solid #E8DDD5; border-radius: 999px; padding: 6px 10px 6px 6px; cursor: pointer; white-space: nowrap; }
+  .step b { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+  .steps i { color: #D8CFC7; font-style: normal; flex: none; }
+  .step-no { display: inline-block; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; line-height: 20px; text-align: center; margin-right: 6px; vertical-align: 1px; font-weight: 700; }
+  .tpl-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tpl-btn { flex: 1 1 22%; padding: 10px 4px; }
+  .voice-timer { font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: .05em; }
+  .rec-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #E2574C; margin-right: 6px; animation: blink 1s ease-in-out infinite; vertical-align: 1px; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+  .card-btns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px; }
+  .card-btns .music-btn { margin-top: 0; }
+  .voice-btn { background: transparent; color: var(--accent); border: 2px solid var(--accent); box-shadow: none; }
+  .voice-btn .tri { border-left-color: var(--accent); }
+  .voice-btn.playing .tri { border-left: 4px solid var(--accent); border-right: 4px solid var(--accent); }
+  .make-own { display: none; width: 100%; margin-top: 16px; appearance: none; border: none; cursor: pointer; background: var(--accent); color: #fff; font-size: 17px; font-weight: 700; padding: 15px 0; border-radius: 999px; box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+  .make-own:active { transform: scale(.98); }
+  .sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.94); box-shadow: 0 -4px 18px rgba(90,50,30,.14); }
+  .sticky-cta .cta-big { display: block; width: 100%; max-width: 448px; margin: 0 auto; appearance: none; border: none; cursor: pointer; background: var(--accent); color: #fff; font-size: 17px; font-weight: 700; letter-spacing: .05em; padding: 14px 0; border-radius: 999px; box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+  .sticky-cta .cta-big:active { transform: scale(.98); }
+  .sticky-cta .cta-big:disabled { opacity: .6; }
+  .qr-box { margin-top: 12px; text-align: center; }
+  .qr-box img { width: 160px; height: 160px; border-radius: 12px; border: 1px solid #E8DDD5; background: #fff; }
+  body.recipient .editor, body.recipient .steps, body.recipient .sticky-cta, body.recipient header .tag { display: none; }
+  body.recipient .page { padding-bottom: 40px; }
+  body.recipient .make-own { display: block; }
 </style>
 </head>
 <body data-theme="peach">
@@ -171,6 +200,14 @@
     <div class="brand">火火文文 · 电子贺卡</div>
     <div class="tag">样 品 卡</div>
   </header>
+
+  <nav class="steps" aria-label="制作步骤">
+    <span class="step" data-goto="sec-scene"><b>1</b>选场景</span><i>&rsaquo;</i>
+    <span class="step" data-goto="sec-text"><b>2</b>写祝福</span><i>&rsaquo;</i>
+    <span class="step" data-goto="sec-photo"><b>3</b>照片音乐</span><i>&rsaquo;</i>
+    <span class="step" data-goto="sec-voice"><b>4</b>语音祝福</span><i>&rsaquo;</i>
+    <span class="step" data-goto="sec-share"><b>5</b>生成链接</span>
+  </nav>
 
   <main class="card" id="card">
     <div class="confetti" id="confetti" aria-hidden="true"></div>
@@ -239,17 +276,23 @@
       <div class="plate"></div>
     </div>
 
-    <button class="music-btn" id="musicBtn" type="button"><span class="tri"></span><span id="musicLabel">播放生日歌</span></button>
+    <div class="card-btns">
+      <button class="music-btn" id="musicBtn" type="button"><span class="tri"></span><span id="musicLabel">播放生日歌</span></button>
+      <button class="music-btn voice-btn" id="voiceBtn" type="button" hidden><span class="tri"></span><span id="voiceLabel">听听祝福</span></button>
+    </div>
     <audio id="audioEl" preload="auto"></audio>
+    <audio id="voiceAudio" preload="auto"></audio>
     <p class="from" id="fromOut">—— 火火和文文</p>
   </main>
+
+  <button class="make-own" id="makeOwn" type="button">我也要做一张</button>
 
   <section class="editor">
     <h2>定制这张卡片</h2>
     <p class="sub">每个模块都能改，上面那张卡会马上跟着变。</p>
 
-    <div class="sec">
-      <h3>场景</h3>
+    <div class="sec" id="sec-scene">
+      <h3><span class="step-no">1</span>选场景</h3>
       <div class="seg" role="group" aria-label="场景">
         <button class="seg-btn" type="button" data-occasion="birthday" aria-pressed="true">生日</button>
         <button class="seg-btn" type="button" data-occasion="love" aria-pressed="false">表白</button>
@@ -257,8 +300,8 @@
       </div>
     </div>
 
-    <div class="sec">
-      <h3>形象 / 插画</h3>
+    <div class="sec" id="sec-illus">
+      <h3><span class="step-no">1</span>形象 / 插画</h3>
       <div class="seg" role="group" aria-label="插画">
         <button class="seg-btn" type="button" data-illus="photo" aria-pressed="true">火火文文</button>
         <button class="seg-btn" type="button" data-illus="flowers" aria-pressed="false">简约花束</button>
@@ -268,33 +311,8 @@
       </div>
     </div>
 
-    <div class="sec">
-      <h3>照片</h3>
-      <p class="sec-note">上传后会替换「火火文文」那张照片，照片会按相框裁切显示。</p>
-      <div class="file-row">
-        <label class="mini-btn" for="photoIn">选择照片…</label>
-        <input type="file" id="photoIn" accept="image/*" hidden>
-        <button class="mini-btn" type="button" id="photoReset">恢复默认照片</button>
-      </div>
-      <label class="toggle"><span>显示照片</span><input type="checkbox" id="photoShow" checked></label>
-    </div>
-
-    <div class="sec">
-      <h3>音乐</h3>
-      <div class="seg" role="group" aria-label="音乐">
-        <button class="seg-btn" type="button" data-music="synth" aria-pressed="true">默认生日歌</button>
-        <button class="seg-btn" type="button" data-music="upload" aria-pressed="false">上传音乐</button>
-        <button class="seg-btn" type="button" data-music="none" aria-pressed="false">无音乐</button>
-      </div>
-      <div class="file-row" id="musicUploadRow" hidden style="margin-top:10px">
-        <label class="mini-btn" for="musicIn">选择音乐文件…</label>
-        <input type="file" id="musicIn" accept="audio/*" hidden>
-      </div>
-      <p class="src-name" id="musicSourceName">当前音乐：默认生日歌（内置合成）</p>
-    </div>
-
-    <div class="sec">
-      <h3>文字</h3>
+    <div class="sec" id="sec-text">
+      <h3><span class="step-no">2</span>写祝福</h3>
       <label><span>大标题</span>
         <input id="titleIn" type="text" value="生日快乐" maxlength="12" placeholder="比如：生日快乐">
       </label>
@@ -310,9 +328,56 @@
 所有的愿望，都轻轻落在你手心。
 生日快乐！</textarea>
       </label>
+      <div class="tpl-row" style="margin-top:10px">
+        <button class="mini-btn tpl-btn" type="button" data-tpl="warm">温馨</button>
+        <button class="mini-btn tpl-btn" type="button" data-tpl="fun">幽默</button>
+        <button class="mini-btn tpl-btn" type="button" data-tpl="friend">送朋友</button>
+        <button class="mini-btn tpl-btn" type="button" data-tpl="elder">送长辈</button>
+      </div>
+      <p class="src-name" id="tplMsg" style="margin-top:6px">点一个，祝福语就换成那句，换完还能再改。</p>
       <label><span>落款</span>
         <input id="fromIn" type="text" value="—— 火火和文文" maxlength="20" placeholder="比如：—— 火火和文文">
       </label>
+    </div>
+
+    <div class="sec" id="sec-photo">
+      <h3><span class="step-no">3</span>照片</h3>
+      <p class="sec-note">上传后会替换「火火文文」那张照片，照片会按相框裁切显示。</p>
+      <div class="file-row">
+        <label class="mini-btn" for="photoIn">选择照片…</label>
+        <input type="file" id="photoIn" accept="image/*" hidden>
+        <button class="mini-btn" type="button" id="photoReset">恢复默认照片</button>
+      </div>
+      <label class="toggle"><span>显示照片</span><input type="checkbox" id="photoShow" checked></label>
+    </div>
+
+    <div class="sec" id="sec-music">
+      <h3><span class="step-no">3</span>音乐</h3>
+      <div class="seg" role="group" aria-label="音乐">
+        <button class="seg-btn" type="button" data-music="synth" aria-pressed="true">默认生日歌</button>
+        <button class="seg-btn" type="button" data-music="upload" aria-pressed="false">上传音乐</button>
+        <button class="seg-btn" type="button" data-music="none" aria-pressed="false">无音乐</button>
+      </div>
+      <div class="file-row" id="musicUploadRow" hidden style="margin-top:10px">
+        <label class="mini-btn" for="musicIn">选择音乐文件…</label>
+        <input type="file" id="musicIn" accept="audio/*" hidden>
+      </div>
+      <p class="src-name" id="musicSourceName">当前音乐：默认生日歌（内置合成）</p>
+    </div>
+
+    <div class="sec" id="sec-voice">
+      <h3><span class="step-no">4</span>语音祝福</h3>
+      <p class="sec-note">录一句你自己的话，收卡人点一下就能听见。最长 60 秒，录完可以试听，不满意就重录。</p>
+      <div class="file-row" id="voiceControls">
+        <button class="mini-btn" type="button" id="voiceRec">● 开始录音</button>
+        <span class="voice-timer" id="voiceTimer" hidden>00:00</span>
+      </div>
+      <div class="file-row" id="voiceAfter" hidden style="margin-top:10px">
+        <button class="mini-btn" type="button" id="voicePlay">试听</button>
+        <button class="mini-btn" type="button" id="voiceRedo">重录</button>
+        <button class="mini-btn" type="button" id="voiceDel">删除</button>
+      </div>
+      <p class="src-name" id="voiceStatus">还没录。录一句祝福，卡片上会多一个“听听祝福”按钮。</p>
     </div>
 
     <div class="sec">
@@ -346,8 +411,8 @@
       </div>
     </div>
 
-    <div class="sec">
-      <h3>专属链接</h3>
+    <div class="sec" id="sec-share">
+      <h3><span class="step-no">5</span>生成链接</h3>
       <p class="sec-note">把当前这张卡的样子生成一个专属链接，别人打开链接就能看到同一张卡。</p>
       <div class="file-row">
         <button class="mini-btn" type="button" id="shareGen">生成专属链接</button>
@@ -358,19 +423,33 @@
           <button class="mini-btn" type="button" id="shareCopy">复制链接</button>
           <span class="src-name" id="shareMsg" style="margin-top:0"></span>
         </div>
-        <p class="src-name warn" id="shareWarn" hidden>专属链接里不含你刚上传的照片/音乐，它们只在当前页面有效</p>
+
+        <div class="qr-box" id="qrBox" hidden>
+          <img id="qrImg" alt="专属链接二维码">
+          <p class="src-name" id="qrMsg">扫码就能打开这张卡。</p>
+        </div>
+        <p class="src-name warn" id="shareWarn" hidden>专属链接里不含你刚上传的照片/音乐/录音，它们只在当前页面有效</p>
       </div>
     </div>
 
-    <p class="hint">这是一张样品卡：上传的照片和音乐只在当前浏览器里有效，关掉页面就没了，不会保存下来；正式售卖时按你的要求做好。默认音乐是内置合成的生日旋律，无版权问题；自己上传的音乐请确认有使用权。</p>
+    <p class="hint">这是一张样品卡：照片、音乐和语音先存在你这台设备上。存储没配好之前，专属链接里只有文字和样子；配好存储后，照片、音乐和语音也会跟着链接走，收卡人打开就能看到、听到。默认音乐是内置合成的生日旋律，无版权问题；自己上传的音乐请确认有使用权。</p>
   </section>
 
-  <footer>电子贺卡 · 样品<br>默认音乐为内置合成旋律，无版权问题</footer>
+  <footer id="pageFooter">电子贺卡 · 样品<br>默认音乐为内置合成旋律，无版权问题</footer>
+</div>
+
+<div class="sticky-cta" id="stickyCta">
+  <button class="cta-big" type="button" id="ctaGen">生成专属链接</button>
 </div>
 
 <script>
 (function () {
   "use strict";
+
+  /* ---------- 存储配置 ---------- */
+  // 部署时把后端地址填进来，例如 "https://suniancard.top/api/media"。
+  // 留空表示未配置：照片 / 音乐 / 语音不上传，专属链接只带文字设置。
+  var STORE = { endpoint: "" };
 
   function $(id) { return document.getElementById(id); }
   function each(list, fn) { for (var i = 0; i < list.length; i++) { fn(list[i], i); } }
@@ -452,6 +531,10 @@
   var currentIllus = "photo";
   var photoVisible = true;
   var photoURL = null;
+  var photoFile = null; // 用户上传的照片原文件（上传前压缩）
+  var remotePhotoUrl = null; // 链接里带来的照片地址（已上传）
+  var uploadedPhotoUrl = null, uploadedMusicUrl = null, uploadedVoiceUrl = null;
+  var remoteMusicUrl = null, remoteVoiceUrl = null;
 
   function applyIllus() {
     var showFrame = currentIllus !== "none" && !(currentIllus === "photo" && !photoVisible);
@@ -475,6 +558,9 @@
     if (!url) { return; }
     revokeURL(photoURL);
     photoURL = url;
+    photoFile = f;
+    remotePhotoUrl = null;
+    uploadedPhotoUrl = null;
     photoImg.src = url;
     photoVisible = true;
     $("photoShow").checked = true;
@@ -485,6 +571,9 @@
   $("photoReset").addEventListener("click", function () {
     revokeURL(photoURL);
     photoURL = null;
+    photoFile = null;
+    remotePhotoUrl = null;
+    uploadedPhotoUrl = null;
     photoImg.src = defaultPhotoSrc;
     $("photoIn").value = "";
     photoVisible = true;
@@ -576,6 +665,7 @@
   var audioEl = $("audioEl");
   var musicSource = "synth"; // synth | upload | none
   var musicURL = null, musicName = "";
+  var musicFile = null; // 用户上传的音乐原文件
 
   function updateMusicLabel() {
     if (playing) { musicLabel.textContent = "正在播放…点按停止"; }
@@ -595,6 +685,14 @@
     if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
     if (audioCtx) { audioCtx.close().catch(function () {}); audioCtx = null; }
     try { audioEl.pause(); } catch (e) {}
+    try { if (typeof voiceAudio !== "undefined" && voiceAudio) { voiceAudio.pause(); } } catch (e) {}
+    try {
+      if (typeof voiceBtn !== "undefined" && voiceBtn) {
+        voiceBtn.classList.remove("playing");
+        var _vl = $("voiceLabel");
+        if (_vl) { _vl.textContent = "听听祝福"; }
+      }
+    } catch (e) {}
     musicBtn.classList.remove("playing");
     updateMusicLabel();
   }
@@ -680,10 +778,254 @@
     }
     revokeURL(musicURL);
     musicURL = url;
+    musicFile = f;
     musicName = f.name;
+    remoteMusicUrl = null;
+    uploadedMusicUrl = null;
     audioEl.src = url;
     setMusicSource("upload");
   });
+
+
+  /* ---------- voice blessing (MediaRecorder) ---------- */
+  var voiceBtn = $("voiceBtn");
+  var voiceAudio = $("voiceAudio");
+  var mediaRecorder = null, voiceChunks = [], voiceBlob = null, voiceURL = null, voiceMime = "";
+  var voiceRecording = false, voiceTimerId = null, voiceSeconds = 0;
+  var VOICE_MAX_SEC = 60;
+
+  function pickVoiceMime() {
+    if (typeof MediaRecorder === "undefined") { return ""; }
+    var cands = ["audio/webm", "audio/mp4", "audio/webm;codecs=opus", "audio/ogg"];
+    for (var i = 0; i < cands.length; i++) {
+      try { if (MediaRecorder.isTypeSupported(cands[i])) { return cands[i]; } } catch (e) {}
+    }
+    return "";
+  }
+  function fmtTime(sec) {
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+  }
+  function clearVoice(clearRemote) {
+    if (voiceTimerId) { clearInterval(voiceTimerId); voiceTimerId = null; }
+    voiceRecording = false;
+    revokeURL(voiceURL);
+    voiceURL = null;
+    voiceBlob = null;
+    voiceAudio.removeAttribute("src");
+    voiceBtn.hidden = true;
+    voiceBtn.classList.remove("playing");
+    $("voiceLabel").textContent = "听听祝福";
+    $("voiceTimer").hidden = true;
+    $("voiceAfter").hidden = true;
+    $("voiceRec").innerHTML = "● 开始录音";
+    if (clearRemote) { remoteVoiceUrl = null; uploadedVoiceUrl = null; }
+  }
+  function stopVoiceRec() {
+    if (voiceTimerId) { clearInterval(voiceTimerId); voiceTimerId = null; }
+    voiceRecording = false;
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      try { mediaRecorder.stop(); } catch (e) {}
+    }
+  }
+  function startVoiceRec() {
+    if (typeof MediaRecorder === "undefined" || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      $("voiceStatus").textContent = "这里录不了，可以改用上传音乐。";
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      voiceMime = pickVoiceMime();
+      try {
+        mediaRecorder = voiceMime ? new MediaRecorder(stream, { mimeType: voiceMime }) : new MediaRecorder(stream);
+      } catch (e) {
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        $("voiceStatus").textContent = "这里录不了，可以改用上传音乐。";
+        return;
+      }
+      voiceChunks = [];
+      mediaRecorder.ondataavailable = function (e) { if (e.data && e.data.size) { voiceChunks.push(e.data); } };
+      mediaRecorder.onstop = function () {
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        voiceBlob = new Blob(voiceChunks, { type: voiceMime || "audio/webm" });
+        revokeURL(voiceURL);
+        voiceURL = makeObjectURL(voiceBlob);
+        voiceAudio.src = voiceURL;
+        remoteVoiceUrl = null;
+        uploadedVoiceUrl = null;
+        voiceBtn.hidden = false;
+        $("voiceTimer").hidden = true;
+        $("voiceAfter").hidden = false;
+        $("voiceRec").innerHTML = "● 开始录音";
+        $("voiceStatus").textContent = "录好了，点试听听一下，不满意可以重录。";
+      };
+      mediaRecorder.start();
+      voiceRecording = true;
+      voiceSeconds = 0;
+      $("voiceTimer").hidden = false;
+      $("voiceTimer").textContent = "00:00";
+      $("voiceRec").innerHTML = "<span class=\"rec-dot\"></span>正在录…点按停止";
+      $("voiceStatus").textContent = "正在录，最长 60 秒，点停止就录好了。";
+      voiceTimerId = setInterval(function () {
+        voiceSeconds++;
+        $("voiceTimer").textContent = fmtTime(voiceSeconds);
+        if (voiceSeconds >= VOICE_MAX_SEC) { stopVoiceRec(); }
+      }, 1000);
+    }).catch(function () {
+      $("voiceStatus").textContent = "这里录不了，可以改用上传音乐。";
+    });
+  }
+  $("voiceRec").addEventListener("click", function () {
+    if (voiceRecording) { stopVoiceRec(); return; }
+    startVoiceRec();
+  });
+  $("voicePlay").addEventListener("click", function () {
+    if (!voiceAudio.getAttribute("src")) { return; }
+    if (voiceAudio.paused) {
+      var p = voiceAudio.play();
+      if (p && p.catch) { p.catch(function () { $("voiceStatus").textContent = "这段录音放不出来，再录一句试试。"; }); }
+      $("voicePlay").textContent = "停止试听";
+    } else {
+      voiceAudio.pause();
+      $("voicePlay").textContent = "试听";
+    }
+  });
+  voiceAudio.addEventListener("ended", function () { $("voicePlay").textContent = "试听"; });
+  $("voiceRedo").addEventListener("click", function () {
+    clearVoice(true);
+    $("voiceStatus").textContent = "再录一句吧。";
+  });
+  $("voiceDel").addEventListener("click", function () {
+    clearVoice(true);
+    $("voiceStatus").textContent = "删掉了，卡片上也没有语音按钮了。";
+  });
+  voiceBtn.addEventListener("click", function () {
+    if (!voiceAudio.getAttribute("src")) { return; }
+    if (voiceAudio.paused) {
+      stopMusic();
+      var p = voiceAudio.play();
+      if (p && p.catch) { p.catch(function () { $("voiceLabel").textContent = "这段录音放不出来"; }); }
+      voiceBtn.classList.add("playing");
+      $("voiceLabel").textContent = "正在播放…点按停止";
+    } else {
+      voiceAudio.pause();
+      voiceBtn.classList.remove("playing");
+      $("voiceLabel").textContent = "听听祝福";
+    }
+  });
+  voiceAudio.addEventListener("ended", function () {
+    voiceBtn.classList.remove("playing");
+    $("voiceLabel").textContent = "听听祝福";
+  });
+
+  /* ---------- media upload (STORE) ---------- */
+  function compressPhoto(file) {
+    return new Promise(function (resolve) {
+      var url = makeObjectURL(file);
+      if (!url) { resolve(file); return; }
+      var img = new Image();
+      img.onload = function () {
+        var max = 1200, w = img.naturalWidth || 0, h = img.naturalHeight || 0;
+        if (!w || !h || (w <= max && h <= max)) { revokeURL(url); resolve(file); return; }
+        var sc = Math.min(max / w, max / h);
+        var cv = document.createElement("canvas");
+        cv.width = Math.round(w * sc);
+        cv.height = Math.round(h * sc);
+        try { cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height); }
+        catch (e) { revokeURL(url); resolve(file); return; }
+        revokeURL(url);
+        if (cv.toBlob) {
+          cv.toBlob(function (b) { resolve(b || file); }, "image/jpeg", 0.8);
+        } else { resolve(file); }
+      };
+      img.onerror = function () { revokeURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+  function uploadMedia(file, filename) {
+    var fd = new FormData();
+    fd.append("file", file, filename);
+    return fetch(STORE.endpoint, { method: "POST", body: fd }).then(function (r) {
+      if (!r.ok) { throw new Error("HTTP " + r.status); }
+      return r.json();
+    }).then(function (j) {
+      if (!j || typeof j.url !== "string" || !j.url) { throw new Error("bad response"); }
+      // 后端可能只返回 "/m/xxx.png" 这样的路径，在这里拼成绝对地址，
+      // 这样收卡人在任何地方打开链接都能找到这张图。
+      try { return new URL(j.url, STORE.endpoint).href; }
+      catch (e) { return j.url; }
+    });
+  }
+  function hasLocalMedia() {
+    return photoFile !== null || (musicSource === "upload" && musicFile !== null) || voiceBlob !== null;
+  }
+  function showQR(link) {
+    var box = $("qrBox"), img = $("qrImg"), msg = $("qrMsg");
+    box.hidden = false;
+    msg.textContent = "扫码就能打开这张卡。";
+    img.style.display = "";
+    img.onerror = function () {
+      img.style.display = "none";
+      msg.textContent = "二维码没加载出来，复制链接发给收卡人也一样。";
+    };
+    img.src = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=8&data=" + encodeURIComponent(link);
+  }
+  function generateShare() {
+    var genBtn = $("shareGen"), ctaBtn = $("ctaGen");
+    var prevText = genBtn.textContent;
+    genBtn.disabled = true;
+    ctaBtn.disabled = true;
+    genBtn.textContent = "正在上传…";
+    var failed = [];
+    uploadedPhotoUrl = null;
+    uploadedMusicUrl = null;
+    uploadedVoiceUrl = null;
+    var chain = Promise.resolve();
+    if (STORE.endpoint) {
+      if (photoFile) {
+        chain = chain.then(function () {
+          return compressPhoto(photoFile).then(function (blob) {
+            return uploadMedia(blob, "photo.jpg");
+          }).then(function (u) { uploadedPhotoUrl = u; }).catch(function () { failed.push("照片"); });
+        });
+      }
+      if (musicSource === "upload" && musicFile) {
+        chain = chain.then(function () {
+          return uploadMedia(musicFile, musicFile.name || "music.mp3").then(function (u) { uploadedMusicUrl = u; }).catch(function () { failed.push("音乐"); });
+        });
+      }
+      if (voiceBlob) {
+        chain = chain.then(function () {
+          var ext = (voiceMime && voiceMime.indexOf("mp4") !== -1) ? "m4a" : "webm";
+          return uploadMedia(voiceBlob, "voice." + ext).then(function (u) { uploadedVoiceUrl = u; }).catch(function () { failed.push("语音"); });
+        });
+      }
+    }
+    return chain.then(function () {
+      genBtn.disabled = false;
+      ctaBtn.disabled = false;
+      genBtn.textContent = prevText;
+      var link = buildShareLink();
+      $("shareLink").value = link;
+      $("shareBox").hidden = false;
+      showQR(link);
+      if (STORE.endpoint) {
+        if (failed.length) {
+          $("shareWarn").hidden = false;
+          $("shareWarn").textContent = failed.join("、") + "没传上去，链接里只有文字和传成功的部分，重新生成可以再试一次。";
+          $("shareMsg").textContent = "链接已生成，但有内容没传上去。";
+        } else {
+          $("shareWarn").hidden = true;
+          $("shareMsg").textContent = "链接已生成，照片、音乐和语音都在链接里，复制后发给收卡人吧。";
+        }
+      } else {
+        var hasUpload = hasLocalMedia();
+        $("shareWarn").hidden = !hasUpload;
+        if (hasUpload) { $("shareWarn").textContent = "专属链接里不含你刚上传的照片/音乐/录音，它们只在当前页面有效"; }
+        $("shareMsg").textContent = "链接已生成，复制后发给收卡人就能打开同一张卡。";
+      }
+      return link;
+    });
+  }
 
   /* ---------- decorations ---------- */
   var fwCanvas = $("fireworks");
@@ -824,11 +1166,15 @@
   // Shared state shape (all fields optional on decode; bad values are ignored):
   // { occasion, illustration, theme, colors?: {bg, accent, text},
   //   title, subtitle, name, blessing, signature,
-  //   photo: "default"|"hidden", music: "synth"|"none",
+  //   photo: "default"|"hidden", music: "synth"|"upload"|"none",
+  //   photoUrl?, musicUrl?, voiceUrl?,
   //   deco: {confetti, hearts, cake, fireworks}, animStyle: "fall"|"rise" }
-  // Uploaded photos / music can never travel inside a link, so they are
-  // deliberately left out (photo falls back to the default picture,
-  // uploaded music falls back to the built-in synth melody).
+  // photoUrl / musicUrl / voiceUrl only exist when a storage backend
+  // (STORE.endpoint) uploaded the file and returned a URL. Without them,
+  // uploaded photos / music / voice stay in the maker's browser only
+  // (photo falls back to the default picture, music to the synth melody,
+  // voice button simply does not appear). Old links without these fields
+  // keep working exactly as before.
   function b64urlEncode(str) {
     var b = btoa(unescape(encodeURIComponent(str)));
     return b.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -853,7 +1199,7 @@
       blessing: $("blessingIn").value,
       signature: $("fromIn").value,
       photo: photoVisible ? "default" : "hidden",
-      music: musicSource === "upload" ? "synth" : musicSource,
+      music: musicSource,
       deco: {
         confetti: $("decoConfetti").checked,
         hearts: $("decoHearts").checked,
@@ -865,6 +1211,12 @@
     if (customColors) {
       st.colors = { bg: $("colorPage").value, accent: $("colorAccent").value, text: $("colorInk").value };
     }
+    if (uploadedPhotoUrl) { st.photoUrl = uploadedPhotoUrl; }
+    else if (remotePhotoUrl) { st.photoUrl = remotePhotoUrl; }
+    if (uploadedMusicUrl) { st.musicUrl = uploadedMusicUrl; }
+    else if (remoteMusicUrl) { st.musicUrl = remoteMusicUrl; }
+    if (uploadedVoiceUrl) { st.voiceUrl = uploadedVoiceUrl; }
+    else if (remoteVoiceUrl) { st.voiceUrl = remoteVoiceUrl; }
     return st;
   }
   function isHexColor(v) {
@@ -900,8 +1252,31 @@
     if (s.photo === "hidden") { photoVisible = false; $("photoShow").checked = false; }
     else if (s.photo === "default") { photoVisible = true; $("photoShow").checked = true; }
     applyIllus();
+    if (typeof s.photoUrl === "string" && /^https?:\/\//.test(s.photoUrl) && s.photoUrl.length < 2000) {
+      remotePhotoUrl = s.photoUrl;
+      photoImg.src = s.photoUrl;
+      photoVisible = true;
+      $("photoShow").checked = true;
+      currentIllus = "photo";
+      illusSeg.set("photo");
+      applyIllus();
+    }
     if (s.music === "synth" || s.music === "none") { setMusicSource(s.music); }
-    else if (s.music === "upload") { setMusicSource("synth"); }
+    else if (s.music === "upload") {
+      if (typeof s.musicUrl === "string" && /^https?:\/\//.test(s.musicUrl) && s.musicUrl.length < 2000) {
+        remoteMusicUrl = s.musicUrl;
+        musicName = "已上传的音乐";
+        audioEl.src = s.musicUrl;
+        setMusicSource("upload");
+      } else {
+        setMusicSource("synth");
+      }
+    }
+    if (typeof s.voiceUrl === "string" && /^https?:\/\//.test(s.voiceUrl) && s.voiceUrl.length < 2000) {
+      remoteVoiceUrl = s.voiceUrl;
+      voiceAudio.src = s.voiceUrl;
+      voiceBtn.hidden = false;
+    }
     if (s.deco && typeof s.deco === "object") {
       if (typeof s.deco.confetti === "boolean") { $("decoConfetti").checked = s.deco.confetti; }
       if (typeof s.deco.hearts === "boolean") { $("decoHearts").checked = s.deco.hearts; }
@@ -914,8 +1289,10 @@
   function parseSharedHash() {
     try {
       var h = location.hash || "";
-      if (h.indexOf("#c=") !== 0) { return null; }
-      var raw = h.slice(3);
+      var raw = null;
+      if (h.indexOf("#c=") === 0) { raw = h.slice(3); }
+      else if (h.indexOf("#card=") === 0) { raw = h.slice(6); }
+      else { return null; }
       if (!raw) { return null; }
       var s = JSON.parse(b64urlDecode(raw));
       if (!s || typeof s !== "object" || Array.isArray(s)) { return null; }
@@ -923,7 +1300,10 @@
     } catch (e) { return null; }
   }
   function buildShareLink() {
-    return location.origin + location.pathname + "#c=" + b64urlEncode(JSON.stringify(collectState()));
+    return buildShareLinkFrom(collectState());
+  }
+  function buildShareLinkFrom(st) {
+    return location.origin + location.pathname + "#c=" + b64urlEncode(JSON.stringify(st));
   }
   function copyText(text, ok, fail) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -956,11 +1336,15 @@
   document.querySelector(".editor").addEventListener("input", markShareStale);
   document.querySelector(".editor").addEventListener("change", markShareStale);
   $("shareGen").addEventListener("click", function () {
-    $("shareLink").value = buildShareLink();
-    $("shareBox").hidden = false;
-    $("shareMsg").textContent = "链接已生成，复制后发给收卡人就能打开同一张卡。";
-    var hasUpload = (photoURL !== null) || (musicSource === "upload" && musicURL !== null);
-    $("shareWarn").hidden = !hasUpload;
+    generateShare();
+  });
+  $("ctaGen").addEventListener("click", function () {
+    var sec = $("sec-share");
+    if (sec && sec.scrollIntoView) {
+      try { sec.scrollIntoView({ behavior: "smooth", block: "start" }); }
+      catch (e) { sec.scrollIntoView(); }
+    }
+    generateShare();
   });
   $("shareLink").addEventListener("click", function () { this.select(); });
   $("shareCopy").addEventListener("click", function () {
@@ -971,13 +1355,51 @@
       function () { $("shareMsg").textContent = "自动复制没成功，长按链接手动复制。"; });
   });
 
+
+  /* ---------- blessing templates ---------- */
+  var TEMPLATES = {
+    warm: "愿你新的一岁，睡得香、吃得好，\n笑得比去年更多一点。\n生日快乐，天天都开心。",
+    fun: "又长大一岁啦，蛋糕先吃，\n愿望先许，变老的事明天再说。\n生日快乐！",
+    friend: "认识你真好。\n新的一岁，继续一起吃饭、一起闹，\n好运都给你留着。\n生日快乐！",
+    elder: "祝您身体硬朗，心情舒畅，\n儿孙绕膝，笑口常开。\n生日快乐，福寿安康！"
+  };
+  each(document.querySelectorAll("[data-tpl]"), function (b) {
+    b.addEventListener("click", function () {
+      var t = TEMPLATES[b.getAttribute("data-tpl")];
+      if (typeof t !== "string") { return; }
+      setText("blessingIn", "blessingOut", t, "生日快乐！");
+      $("tplMsg").textContent = "已替换，可再改。";
+    });
+  });
+
+  /* ---------- steps nav: tap a step to jump to that section ---------- */
+  each(document.querySelectorAll(".step[data-goto]"), function (el) {
+    el.addEventListener("click", function () {
+      var target = $(el.getAttribute("data-goto"));
+      if (target && target.scrollIntoView) {
+        try { target.scrollIntoView({ behavior: "smooth", block: "start" }); }
+        catch (e) { target.scrollIntoView(); }
+      }
+    });
+  });
+
+  /* ---------- recipient mode: "我也要做一张" ---------- */
+  $("makeOwn").addEventListener("click", function () {
+    location.href = location.href.split("#")[0];
+  });
+
   /* ---------- init ---------- */
   applyIllus();
   applyDeco();
   updateMusicLabel();
   updateMusicSourceName();
   var shared = parseSharedHash();
-  if (shared) { applySharedState(shared); }
+  if (shared) {
+    applySharedState(shared);
+    // 收卡人模式：只看卡片，不看编辑器。
+    document.body.classList.add("recipient");
+    $("pageFooter").textContent = "火火文文电子贺卡";
+  }
 })();
 </script>
 </body>
