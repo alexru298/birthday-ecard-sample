@@ -221,9 +221,9 @@ class CardActions {
             additionalProperties: false,
             required: ["bg", "accent", "text"],
             properties: {
-              bg: { type: "string", pattern: "^#[0-9a-fA-F]{6}$", description: "Page background, #RRGGBB." },
-              accent: { type: "string", pattern: "^#[0-9a-fA-F]{6}$", description: "Main accent colour, #RRGGBB." },
-              text: { type: "string", pattern: "^#[0-9a-fA-F]{6}$", description: "Text colour, #RRGGBB." },
+              bg: { type: "string", description: "Page background, #RRGGBB hex code." },
+              accent: { type: "string", description: "Main accent colour, #RRGGBB hex code." },
+              text: { type: "string", description: "Text colour, #RRGGBB hex code." },
             },
           },
         },
