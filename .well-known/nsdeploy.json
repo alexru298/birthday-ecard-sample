@@ -1,0 +1,18 @@
+{
+  "exports": [
+    {
+      "aliases": [
+        "birthday_ecard_assistant",
+        "card_coordinator"
+      ],
+      "front_man": "card_coordinator",
+      "network": "birthday_ecard_assistant",
+      "url": "birthday_ecard_assistant"
+    }
+  ],
+  "imports": [],
+  "link_updates": {
+    "mode": "browser-local"
+  },
+  "protocol": "nsdeploy-link/v1"
+}

@@ -1,0 +1,84 @@
+{
+  "actions": {
+    "agentTools": [
+      "get_card_state",
+      "set_card_text",
+      "apply_blessing_template",
+      "set_occasion",
+      "set_theme",
+      "set_illustration",
+      "set_decoration",
+      "set_music",
+      "generate_share_link"
+    ],
+    "bridge": "./bridge/action-bridge.html",
+    "module": "./card-actions.js",
+    "version": 1
+  },
+  "agent_mcp": {
+    "available": false,
+    "front_man": "card_coordinator",
+    "network": "birthday_ecard_assistant",
+    "protocol": "nsdeploy-agent-mcp/v1",
+    "reason": "This is a static bundle; a public MCP facade requires an application host."
+  },
+  "allowed_peers": [],
+  "brand": "HuoHuo & WenWen E-Card Assistant",
+  "deployment": {
+    "browser_mock": false,
+    "direct_byok": true,
+    "direct_mcp_requires_cors": true,
+    "mode": "static",
+    "public_mcp_facade": false,
+    "self_contained_runtime": true
+  },
+  "linking": {
+    "exports": [
+      {
+        "aliases": [
+          "birthday_ecard_assistant",
+          "card_coordinator"
+        ],
+        "front_man": "card_coordinator",
+        "network": "birthday_ecard_assistant",
+        "url": "birthday_ecard_assistant"
+      }
+    ],
+    "imports": [],
+    "link_updates": {
+      "mode": "browser-local"
+    },
+    "protocol": "nsdeploy-link/v1"
+  },
+  "llm_router": {
+    "base_url": "https://api.otari.ai/api/v1",
+    "byok_router": "https://api.otari.ai/api/v1",
+    "mock": false
+  },
+  "networks": [
+    {
+      "description": "Make a birthday e-card with an assistant: it writes the blessing, picks the look, and makes the share link.",
+      "front_man": "card_coordinator",
+      "hocon": "./birthday_ecard_assistant.network.json",
+      "name": "birthday_ecard_assistant",
+      "sample_queries": [
+        "What does this card look like right now?",
+        "Write a warm birthday blessing for my mum and put it on the card.",
+        "Make the card mint green with the balloon bear and hearts.",
+        "Make a share link for this card.",
+        "Upload a photo of my dog to the card."
+      ],
+      "tags": [
+        "agentified-website"
+      ]
+    }
+  ],
+  "peer_policy": {
+    "deny_origins": [],
+    "mode": "closed",
+    "note": "Local agents and page-local actions only."
+  },
+  "theme": {
+    "primary": "#E2574C"
+  }
+}

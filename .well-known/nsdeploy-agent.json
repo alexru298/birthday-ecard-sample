@@ -1,0 +1,7 @@
+{
+  "available": false,
+  "front_man": "card_coordinator",
+  "network": "birthday_ecard_assistant",
+  "protocol": "nsdeploy-agent-mcp/v1",
+  "reason": "This is a static bundle; a public MCP facade requires an application host."
+}
