@@ -64,7 +64,16 @@ export class AssistantMount {
       return booted.engine;
     } catch (error) {
       // The page must keep working without the assistant.
-      status.textContent = "The assistant could not load. You can still use the page directly.";
+      // Show the failure on the page itself (not only in the console), so the
+      // exact error can be read without opening developer tools.
+      const detail = error && error.message ? String(error.message) : String(error);
+      let where = "";
+      try {
+        const stack = String((error && error.stack) || "");
+        const line = stack.split("\n").slice(1).find((l) => l.includes(".js:"));
+        if (line) where = " " + line.trim();
+      } catch { /* keep the message only */ }
+      status.textContent = "The assistant could not load. You can still use the page directly. (Error: " + detail + where + ")";
       console.error("Assistant startup failed", error);
       return null;
     }
